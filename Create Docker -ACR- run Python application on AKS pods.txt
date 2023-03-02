@@ -1,0 +1,70 @@
+mkdir my-webapp
+cd my-webapp
+------------
+docker file
+# Use an official Python runtime as a parent image
+FROM python:3.8-slim-buster
+
+# Set the working directory to /app
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install any needed packages specified in requirements.txt
+RUN pip install --trusted-host pypi.python.org -r requirements.txt
+
+# Make port 80 available to the world outside this container
+EXPOSE 80
+
+# Define environment variable
+ENV NAME World
+
+# Run app.py when the container launches
+CMD ["python", "app.py"]
+-------------------------
+
+Create a new file called app.py and add the following content:
+from flask import Flask
+app = Flask(__name__)
+
+@app.route("/")
+def hello():
+    return "Hello, " + os.environ.get('NAME', 'World') + "!"
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=80)
+------------------------------------
+
+Create a new file called requirements.txt and add the following content:
+flask
+-------------------
+az account set --subscription e61c9c1e-1f3b-4a27-bd84-1631b0c60c12
+az aks get-credentials --resource-group tuq2kor --name testingaks1
+
+
+docker login $ACR_LOGIN_SERVER -u tuq2koracr -password-stdin  aTASL5z0Lp6me6CbQYc3ry+o4K/X14LbyIvP+pHQms+ACRDcD/C5			#ACR at portal
+export ACR_LOGIN_SERVER=tuq2koracr.azurecr.io
+docker login $ACR_LOGIN_SERVER -u tuq2koracr -p aTASL5z0Lp6me6CbQYc3ry+o4K/X14LbyIvP+pHQms+ACRDcD/C5
+az acr build --image <imagename>:<tag> --registry tuq2koracr --file Dockerfile .
+
+
+
+
+
+
+
+-----------------
+
+If you are Azure CLI from machine
+
+az login
+az group create --name my-acr-group --location eastus
+az acr create --name myacr1234 --resource-group my-acr-group --sku Basic
+
+az acr login --name myacr1234
+
+docker tag my-webapp-image myacr1234.azurecr.io/my-webapp-image:v1
+
+docker push myacr1234.azurecr.io/my-webapp-image:v1
+

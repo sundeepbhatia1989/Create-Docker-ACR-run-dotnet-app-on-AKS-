@@ -1,0 +1,75 @@
+mkdir mydotnetapp
+cd mydotnetapp
+
+------------
+dotnet new webapp
+------------------
+Edit the Dockerfile to include the following contents:
+
+
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build-env
+WORKDIR /app
+
+# Copy csproj and restore as distinct layers
+COPY *.csproj ./
+RUN dotnet restore
+
+# Copy everything else and build
+COPY . ./
+RUN dotnet publish -c Release -o out
+
+# Build runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:6.0
+WORKDIR /app
+COPY --from=build-env /app/out .
+
+# Set the startup command
+ENTRYPOINT ["dotnet", "mydotnetapp.dll"]
+------------------------------
+az account set --subscription e61c9c1e-1f3b-4a27-bd84-1631b0c60c12
+az aks get-credentials --resource-group tuq2kor --name testingaks1
+
+
+docker login $ACR_LOGIN_SERVER -u tuq2koracr -password-stdin  aTASL5z0Lp6me6CbQYc3ry+o4K/X14LbyIvP+pHQms+ACRDcD/C5			#ACR at portal
+export ACR_LOGIN_SERVER=tuq2koracr.azurecr.io
+docker login $ACR_LOGIN_SERVER -u tuq2koracr -p aTASL5z0Lp6me6CbQYc3ry+o4K/X14LbyIvP+pHQms+ACRDcD/C5
+az acr build --image <imagename>:<tag> --registry tuq2koracr --file Dockerfile .
+
+
+-------------------
+Deployment file 
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-dotnet-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-dotnet-app
+  template:
+    metadata:
+      labels:
+        app: my-dotnet-app
+    spec:
+      containers:
+      - name: my-dotnet-app
+        image: my-acr-name.azurecr.io/my-dotnet-app:1.0.0
+        ports:
+        - containerPort: 80
+--------------service ----------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  selector:
+    app: my-app
+
+------------Issue image is not taking---------------
